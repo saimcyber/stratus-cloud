@@ -1,0 +1,4 @@
+-r services/kms/requirements.txt
+-r services/vault/requirements.txt
+httpx==0.28.1
+pytest==9.2.0

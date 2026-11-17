@@ -1,0 +1,8 @@
+fastapi==0.163.1
+uvicorn[standard]==0.54.0
+SQLAlchemy==2.1.9
+psycopg[binary]==3.3.9
+cryptography==50.0.2
+PyJWT[crypto]==2.15.1
+python-dotenv==1.2.4
+python-multipart==0.0.34
