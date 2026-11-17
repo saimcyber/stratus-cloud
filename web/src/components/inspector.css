@@ -1,0 +1,214 @@
+/* Envelope Inspector. Colours come from Cloudscape tokens so light and dark both work. */
+.ins-stage {
+  position: relative;
+  border-radius: 14px;
+  padding: 14px 14px 52px;
+  background: var(--ins-bg);
+  border: 1px solid var(--ins-border);
+  overflow: hidden;
+}
+.ins-lanes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.ins-lane {
+  min-height: 132px;
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--ins-surface);
+  border: 1px solid var(--ins-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ins-lane.untrusted {
+  border-style: dashed;
+}
+.ins-lane-title {
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.ins-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b4530f;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0 6px;
+}
+.ins-chip {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(130, 140, 155, 0.12);
+  width: fit-content;
+  max-width: 100%;
+}
+.ins-chip.hot {
+  background: rgba(255, 153, 0, 0.18);
+  color: #a65400;
+}
+.ins-chip.plain {
+  background: rgba(31, 138, 101, 0.14);
+  color: #1b7a59;
+}
+.ins-track {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  height: 28px;
+  border-top: 1px dashed var(--ins-border);
+}
+.ins-packet {
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgba(15, 27, 42, 0.18);
+}
+.ins-packet.key {
+  background: #ff9900;
+  color: #1a1206;
+}
+.ins-packet.data {
+  background: #0f1b2a;
+  color: #f6f3ec;
+}
+.ins-packet.wrapped {
+  background: #f6f3ec;
+  color: #0f1b2a;
+  border: 1px solid #d8d1c2;
+}
+.ins-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.ins-step {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ins-border);
+}
+.ins-step.pending {
+  opacity: 0.55;
+}
+.ins-detail {
+  margin-top: 8px;
+  font-size: 13px;
+  overflow: hidden;
+}
+.ins-detail code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+.ins-hex {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(130, 140, 155, 0.1);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.ins-hex.plain {
+  color: #1b7a59;
+}
+.ins-label {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.ins-note {
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+.ins-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.ins-grid {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+  gap: 3px;
+  margin-top: 6px;
+  perspective: 400px;
+  max-width: 560px;
+}
+.ins-cell {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  text-align: center;
+  padding: 3px 0;
+  border-radius: 4px;
+}
+.ins-cell.live {
+  background: rgba(255, 153, 0, 0.22);
+  color: #a65400;
+}
+.ins-cell.zero {
+  background: rgba(130, 140, 155, 0.14);
+  opacity: 0.85;
+}
+
+@media (max-width: 640px) {
+  .ins-lanes {
+    gap: 6px;
+  }
+  .ins-lane {
+    padding: 8px 6px;
+  }
+  .ins-chip {
+    font-size: 10px;
+    padding: 3px 5px;
+  }
+  .ins-split {
+    grid-template-columns: 1fr;
+  }
+  .ins-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+  .ins-packet {
+    font-size: 10px;
+    padding: 3px 7px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .awsui-dark-mode .ins-chip.hot,
+  .awsui-dark-mode .ins-cell.live {
+    color: #ffb84d;
+  }
+}
+.awsui-dark-mode .ins-chip.hot,
+.awsui-dark-mode .ins-cell.live {
+  color: #ffb84d;
+}
+.awsui-dark-mode .ins-chip.plain,
+.awsui-dark-mode .ins-hex.plain {
+  color: #5fd3a5;
+}
+.awsui-dark-mode .ins-tag {
+  color: #ffb84d;
+}

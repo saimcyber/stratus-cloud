@@ -1,0 +1,44 @@
+# Render Blueprint: two separate services = two trust domains.
+# Secrets are marked sync:false and entered in the Render dashboard (never committed).
+services:
+  - type: web
+    name: stratus-kms
+    runtime: python
+    plan: free
+    rootDir: services/kms
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn stratus_kms.main:app --host 0.0.0.0 --port $PORT --proxy-headers
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: KMS_DATABASE_URL      # Neon connection string for the kms database
+        sync: false
+      - key: ROOT_KEK              # python scripts/gen_secrets.py --print
+        sync: false
+      - key: JWT_PRIVATE_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS       # e.g. https://stratus-cloud.vercel.app
+        sync: false
+      - key: DEMO_MODE
+        value: "true"
+
+  - type: web
+    name: stratus-vault
+    runtime: python
+    plan: free
+    rootDir: services/vault
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn stratus_vault.main:app --host 0.0.0.0 --port $PORT --proxy-headers
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: VAULT_DATABASE_URL    # Neon connection string for the vault database (different role)
+        sync: false
+      - key: JWT_PUBLIC_KEY        # public half only: the Vault can verify sessions, never mint them
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: DEMO_MODE
+        value: "true"
