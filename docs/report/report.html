@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Stratus Cloud: Technical Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+  @page { size: A4; margin: 18mm 17mm 18mm 17mm; }
+  @page :first { margin: 0; }
+  :root { --ink:#0f1b2a; --paper:#f6f3ec; --amber:#ff9900; --amber-d:#b85f00; --slate:#5b6472; --line:#ddd5c4; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin:0; font-family: Inter, 'Segoe UI', sans-serif; font-size: 10pt; line-height: 1.55; color: #1d2633; }
+  h1, h2, h3 { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; color: var(--ink); letter-spacing: -0.01em; }
+  h2 { font-size: 23pt; margin: 0 0 6pt; padding-top: 2pt; break-after: avoid; }
+  h2 .n { font-family: 'JetBrains Mono', monospace; font-size: 10pt; color: var(--amber-d); letter-spacing: .08em; display:block; margin-bottom: 2pt; }
+  h3 { font-size: 15pt; margin: 16pt 0 4pt; break-after: avoid; }
+  p { margin: 0 0 7pt; }
+  section { break-before: page; }
+  section.flow { break-before: auto; margin-top: 18pt; }
+  code, .mono { font-family: 'JetBrains Mono', monospace; font-size: 8.6pt; }
+  pre { font-family: 'JetBrains Mono', monospace; font-size: 8pt; line-height: 1.5; background: #f3f1ec; border: 1px solid #e6e0d3; border-radius: 6px; padding: 8pt 10pt; white-space: pre-wrap; break-inside: avoid; margin: 6pt 0 10pt; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 12pt; font-size: 8.8pt; break-inside: auto; }
+  th { text-align: left; font-weight: 600; background: var(--ink); color: var(--paper); padding: 5pt 7pt; }
+  td { padding: 5pt 7pt; border-bottom: 1px solid #e6e0d3; vertical-align: top; }
+  tr { break-inside: avoid; }
+  tr:nth-child(even) td { background: #faf8f3; }
+  figure { margin: 8pt 0 12pt; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid #e3ddd0; border-radius: 6px; display: block; }
+  figcaption { font-size: 8.4pt; color: var(--slate); margin-top: 4pt; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; }
+  .callout { border-left: 3px solid var(--amber); background: #fff8ec; padding: 7pt 10pt; margin: 8pt 0 12pt; break-inside: avoid; }
+  .muted { color: var(--slate); }
+  ul, ol { margin: 0 0 8pt; padding-left: 15pt; }
+  li { margin-bottom: 2pt; }
+  pre.wide { white-space: pre; font-size: 6.9pt; overflow: hidden; }
+  .mermaid { break-inside: avoid; margin: 6pt 0 12pt; text-align: center; }
+  .mermaid svg { max-width: 100% !important; height: auto; }
+
+  /* cover */
+  .cover { height: 297mm; width: 210mm; background: var(--ink); color: var(--paper); padding: 26mm 22mm; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+  .cover::after { content:''; position:absolute; right:-60mm; bottom:-60mm; width:180mm; height:180mm; background: radial-gradient(closest-side, rgba(255,153,0,.18), transparent); }
+  .cover .brand { display:flex; align-items:center; gap:10pt; font-weight:600; font-size: 13pt; }
+  .cover h1 { color: var(--paper); font-size: 50pt; line-height: .98; margin: 0 0 12pt; }
+  .cover h1 em { color: var(--amber); }
+  .cover .sub { font-size: 13pt; color: rgba(246,243,236,.75); max-width: 120mm; }
+  .cover .meta { font-size: 9.5pt; color: rgba(246,243,236,.75); display:grid; grid-template-columns: 1fr 1fr; gap: 8pt 20pt; position: relative; z-index: 1; }
+  .cover .meta b { color: var(--paper); display:block; font-weight: 600; margin-bottom: 1pt; }
+  .strata { display:grid; gap:6pt; width: 95mm; margin-top: 18pt; }
+  .strata div { border:1px solid rgba(246,243,236,.18); border-radius:7px; padding:6pt 10pt; font-size:9pt; display:flex; justify-content:space-between; }
+  .strata div:nth-child(1){ border-color: rgba(255,153,0,.6); }
+  .strata div:nth-child(2){ margin-left: 8mm; }
+  .strata div:nth-child(3){ margin-left: 16mm; }
+  .strata span { color: rgba(246,243,236,.55); }
+
+  .toc { columns: 2; column-gap: 18pt; font-size: 10pt; }
+  .toc div { display:flex; gap:8pt; padding: 3pt 0; border-bottom: 1px dotted #d9d2c3; break-inside: avoid; }
+  .toc .n { font-family:'JetBrains Mono', monospace; color: var(--amber-d); width: 18pt; }
+  .kpis { display:grid; grid-template-columns: repeat(4,1fr); gap: 8pt; margin: 8pt 0 12pt; }
+  .kpis div { border:1px solid var(--line); border-radius: 8px; padding: 8pt; }
+  .kpis b { font-family:'Instrument Serif', serif; font-weight:400; font-size: 22pt; display:block; color: var(--ink); line-height: 1.1; }
+  .kpis span { font-size: 8pt; color: var(--slate); }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ COVER -->
+<div class="cover">
+  <div class="brand"><img src="../../web/public/favicon.svg" width="26" height="26" alt="" /> Stratus Cloud</div>
+  <div>
+    <p class="mono" style="color:var(--amber);letter-spacing:.12em;font-size:9pt;margin-bottom:14pt">CS-3002 INFORMATION SECURITY · TECHNICAL REPORT</p>
+    <h1>Envelope Encryption<br/>for <em>Cloud Storage</em></h1>
+    <p class="sub">A multi-tenant key management service and an untrusted object store, built to the model used by production cloud KMSs: Root KEK → customer managed key → per-object data key.</p>
+    <div class="strata">
+      <div>Root KEK <span>KMS process only</span></div>
+      <div>Customer managed key <span>per tenant, versioned</span></div>
+      <div>Data key <span>per object, then wiped</span></div>
+    </div>
+  </div>
+  <div class="meta">
+    <div><b>Team</b>Saim Zaib (24I-2023)<br/>Abdullah Sajid (24I-2101)<br/>Nihammad Amish (24I-2099)</div>
+    <div><b>Instructor</b>Dr. Hina Binte Haq<br/>FAST NUCES, Islamabad<br/>November 2026</div>
+  </div>
+</div>
+
+<!-- ============================================================ TOC + SUMMARY -->
+<section>
+  <h2><span class="n">CONTENTS</span>What is in this report</h2>
+  <div class="toc">
+    <div><span class="n">01</span>Summary and requirements</div>
+    <div><span class="n">02</span>System architecture</div>
+    <div><span class="n">03</span>Cryptographic design and library choices</div>
+    <div><span class="n">04</span>Key lifecycle</div>
+    <div><span class="n">05</span>Protocol workflows</div>
+    <div><span class="n">06</span>Multi-tenancy and concurrency</div>
+    <div><span class="n">07</span>Application and usability</div>
+    <div><span class="n">08</span>Threat model</div>
+    <div><span class="n">09</span>Attack simulations and mitigations</div>
+    <div><span class="n">10</span>Security vs. usability trade-offs</div>
+    <div><span class="n">11</span>Implementation hurdles</div>
+    <div><span class="n">12</span>Testing, deployment and limitations</div>
+  </div>
+
+  <section class="flow">
+    <h2><span class="n">01</span>Summary</h2>
+    <p>Stratus Cloud demonstrates <b>envelope encryption</b>: data is encrypted with a short-lived data encryption key (DEK), and the DEK is protected by a key that never leaves a key management service. We built two independently deployed services and a browser client:</p>
+    <ul>
+      <li><b>Stratus KMS</b> holds a three-tier key hierarchy, issues and unwraps data keys, and enforces tenant isolation and per-key access lists. It never receives user files.</li>
+      <li><b>Stratus Vault</b> is an object store we treat as <i>untrusted</i>. It stores ciphertext plus the wrapped DEK, has no KMS credentials, and cannot mint sessions.</li>
+      <li><b>The Stratus Console</b> runs in the browser. It requests a DEK, imports it as a non-extractable Web Crypto key, wipes the raw bytes, encrypts the file with AES-256-GCM, and uploads only ciphertext.</li>
+    </ul>
+    <div class="kpis">
+      <div><b>24</b><span>automated tests incl. RFC 3394 vectors and end-to-end flows</span></div>
+      <div><b>0 / 25</b><span>cross-tenant requests succeeded under a 100-request concurrent load</span></div>
+      <div><b>5</b><span>live attacks in the Security Lab, each stopped</span></div>
+      <div><b>~10 ms</b><span>data-key round trip, constant regardless of file size</span></div>
+    </div>
+
+    <h3>Requirements and where they are met</h3>
+    <table>
+      <tr><th style="width:32%">Requirement</th><th>Implementation</th></tr>
+      <tr><td>Key hierarchy: Root KEK → CMK → DEK</td><td>Root KEK seals versioned CMK material (AES-KW, RFC 3394); CMKs wrap per-object DEKs (AES-KW or RSA-2048-OAEP).</td></tr>
+      <tr><td>Rotation</td><td>On-demand CMK versions; old versions decrypt only; <code>ReEncrypt</code> re-wraps DEKs inside the KMS without touching ciphertext.</td></tr>
+      <tr><td>Revocation</td><td>Per-user access removal, reversible disable, scheduled deletion that destroys key material (crypto-shredding).</td></tr>
+      <tr><td>Secure memory zeroization</td><td><code>bytearray</code> + <code>memset</code> on every secret the KMS owns; browser imports DEKs non-extractable and fills raw buffers with zeros.</td></tr>
+      <tr><td>Strict trust boundaries</td><td>Separate services, databases, roles and secrets. The Vault never calls the KMS; the KMS never receives payloads.</td></tr>
+      <tr><td>Concurrency and multi-tenancy under ACLs</td><td>Tenant scoping on every query, per-key ACLs, row lock + unique version constraint on rotation, rate limits, lockout. Proven by a concurrent load test.</td></tr>
+      <tr><td>Course deliverables</td><td>Threat model, DFD/sequence diagrams, guided walkthrough and tooltips, REST APIs, attack simulations, trade-off measurements, GitHub repository, live deployment.</td></tr>
+    </table>
+  </section>
+</section>
+
+<!-- ============================================================ ARCHITECTURE -->
+<section>
+  <h2><span class="n">02</span>System architecture</h2>
+  <p>The design separates three trust domains. Each component receives only the information and the secrets it needs.</p>
+  <div class="mermaid">
+flowchart LR
+  subgraph B["Browser · trusted client"]
+    UI[Stratus Console]
+    WC[Web Crypto<br/>AES-256-GCM]
+  end
+  subgraph K["Stratus KMS · keys only"]
+    API1[FastAPI]
+    ROOT[(Root KEK)]
+    KDB[(kms DB)]
+  end
+  subgraph V["Stratus Vault · untrusted"]
+    API2[FastAPI]
+    VDB[(vault DB)]
+  end
+  UI -- "data-key requests<br/>32-byte keys + labels" --> API1
+  UI -- "ciphertext + envelope" --> API2
+  API1 --- ROOT
+  API1 --- KDB
+  API2 --- VDB
+  </div>
+  <table>
+    <tr><th>Component</th><th>Holds</th><th>Never holds</th><th>Stack</th></tr>
+    <tr><td><b>Browser</b></td><td>The file; a DEK for milliseconds</td><td>CMKs, Root KEK</td><td>React, Cloudscape, Web Crypto API</td></tr>
+    <tr><td><b>Stratus KMS</b></td><td>Root KEK, sealed CMK versions, users, ACLs, audit log, token signing key</td><td>User files, ciphertext</td><td>FastAPI, <code>cryptography</code>, SQLAlchemy, Postgres</td></tr>
+    <tr><td><b>Stratus Vault</b></td><td>Ciphertext, wrapped DEKs, IVs, encryption context, access log</td><td>Any usable key, KMS credentials, signing key</td><td>FastAPI, SQLAlchemy, Postgres</td></tr>
+  </table>
+  <div class="callout"><b>Boundaries enforced by deployment, not just drawn.</b> The two services run as separate processes on separate hosts, with separate Postgres databases owned by separate roles. The Vault is given only the <i>public</i> Ed25519 key, so it can verify a session but cannot forge one. Re-wrap jobs are orchestrated by the client, so the Vault never needs to talk to the KMS.</div>
+
+  <h3>Modules</h3>
+  <table>
+    <tr><th>Module</th><th>Responsibility</th></tr>
+    <tr><td><code>kms/crypto.py</code></td><td>Root keyring, CMK version creation, ciphertext-blob format, wrap/unwrap, context HMAC</td></tr>
+    <tr><td><code>kms/keys.py</code></td><td>Authorisation, lifecycle (create, rotate, disable, delete, access), data-key operations</td></tr>
+    <tr><td><code>kms/zeroize.py</code></td><td><code>zeroize()</code> and the <code>secret()</code> context manager</td></tr>
+    <tr><td><code>kms/auth.py</code>, <code>ratelimit.py</code>, <code>audit.py</code></td><td>scrypt passwords, Ed25519 tokens, token bucket, lockouts, audit trail</td></tr>
+    <tr><td><code>vault/main.py</code></td><td>Buckets, objects, envelope validation, size cap, access log, lab dump endpoint</td></tr>
+    <tr><td><code>web/src/lib/envelope.ts</code></td><td>Client-side encrypt/upload, fetch/decrypt, re-wrap, DEK wiping</td></tr>
+    <tr><td><code>sdk/stratus_sdk</code></td><td>The same envelope flow in Python, used by tests and the load test</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ CRYPTO -->
+<section>
+  <h2><span class="n">03</span>Cryptographic design</h2>
+  <p>Every primitive comes from a peer-reviewed library. Nothing is implemented by hand: the Python side uses <code>cryptography</code> (OpenSSL bindings) and the browser uses the native Web Crypto API.</p>
+  <pre class="wide">Root KEK  (256-bit, env secret, held in a bytearray inside the KMS process)
+  └─ CMK version material (256-bit random)      sealed: AES-KW(Root KEK, material)            RFC 3394
+       ├─ kw key  = HKDF-SHA256(material, "stratus/kw/v1")    wraps DEKs (AES-KW)
+       ├─ RSA-2048 key pair (RSA CMKs)        private key sealed: AES-KWP(Root KEK, PKCS#8)  RFC 5649
+       │                                      wraps DEKs with RSA-OAEP (SHA-256, MGF1-SHA-256)
+       └─ ctx key = HKDF-SHA256(material, "stratus/ctx/v1")   HMAC-SHA256 over blob ‖ context
+            └─ DEK (256-bit, one per object)   AES-256-GCM, 96-bit random IV, 128-bit tag,
+                                               AAD = canonical JSON {tenant, bucket, object}</pre>
+  <table>
+    <tr><th>Choice</th><th>Why</th></tr>
+    <tr><td>AES-256-GCM for payloads</td><td>Authenticated encryption: confidentiality plus integrity in one pass. Native in every browser, hardware-accelerated, and no padding (so no padding oracles).</td></tr>
+    <tr><td>AES Key Wrap (RFC 3394) for DEKs and CMK material</td><td>A deterministic, integrity-checked mode designed for wrapping keys; it needs no IV management. Verified against the RFC test vectors in our test suite.</td></tr>
+    <tr><td>RSA-2048-OAEP as an alternative</td><td>Required by the proposal. It lets a public key wrap DEKs; OAEP (not PKCS#1 v1.5) avoids Bleichenbacher-style oracles.</td></tr>
+    <tr><td>HMAC-bound encryption context</td><td>AES-KW has no associated data. We add an HMAC over the blob header, the wrapped key and the canonical context, so a wrapped DEK only opens for the object it was issued for.</td></tr>
+    <tr><td>HKDF domain separation</td><td>One CMK version yields independent keys for wrapping and for context MACs, so one key is never used for two purposes.</td></tr>
+    <tr><td>Ed25519 session tokens</td><td>Asymmetric: the KMS signs, the Vault only verifies. Small keys and fast verification.</td></tr>
+    <tr><td>scrypt password hashing</td><td>Memory-hard, built into Python; compared in constant time.</td></tr>
+  </table>
+  <h3>Ciphertext blob (wrapped DEK) format</h3>
+  <pre class="wide">"SKB1" | alg (1 B) | CMK id (16 B) | CMK version (4 B) | len (2 B) | wrapped DEK (40 or 256 B) | HMAC-SHA256 (32 B)</pre>
+  <p>Because the blob names its key and version, Decrypt needs no key id from the caller, and old versions keep working after rotation. The Vault stores this blob next to the ciphertext. Without the KMS it is useless.</p>
+</section>
+
+<!-- ============================================================ LIFECYCLE -->
+<section>
+  <h2><span class="n">04</span>Key lifecycle</h2>
+  <table>
+    <tr><th style="width:18%">Stage</th><th>Root KEK</th><th>CMK</th><th>DEK</th></tr>
+    <tr><td><b>Generation</b></td><td>32 bytes from <code>os.urandom</code>, created once by <code>gen_secrets.py</code></td><td><code>os.urandom</code> per version; RSA via OpenSSL keygen</td><td><code>os.urandom</code> per GenerateDataKey call</td></tr>
+    <tr><td><b>Distribution</b></td><td>Never distributed; set as a host secret on the KMS only</td><td>Never leaves the KMS</td><td>Plaintext to the requesting browser over TLS; wrapped copy stored in the Vault</td></tr>
+    <tr><td><b>Storage</b></td><td>Process memory, in a <code>bytearray</code></td><td>KMS database, AES-KW / AES-KWP sealed under the Root KEK</td><td>Only wrapped, in the Vault</td></tr>
+    <tr><td><b>Rotation</b></td><td>Manual (design: re-seal all CMK rows)</td><td>On demand; new primary version; ReEncrypt moves objects forward</td><td>Implicit: a new DEK for every upload</td></tr>
+    <tr><td><b>Revocation</b></td><td>-</td><td>Access removal; disable; scheduled deletion (7–30 days, minutes in demo mode)</td><td>Revoked through its CMK</td></tr>
+    <tr><td><b>Destruction</b></td><td>-</td><td>Material columns nulled, versions marked destroyed (crypto-shred)</td><td>Zeroized after each use</td></tr>
+  </table>
+  <h3>Zeroization in practice</h3>
+  <p>Inside the KMS every secret it owns (Root KEK, unsealed CMK material, derived kw/ctx keys, DEKs, RSA private-key DER) is held in a <code>bytearray</code> and wiped with <code>ctypes.memset</code> in a <code>finally</code> block, so it is cleared on error paths too. In the browser the DEK is imported with <code>extractable: false</code>, and the raw <code>Uint8Array</code> is filled with zeros before any encryption happens. From then on only an opaque <code>CryptoKey</code> handle exists. The Envelope Inspector shows this step live (figure 3).</p>
+  <div class="callout"><b>Honest limitation.</b> Zeroization in managed runtimes is best-effort. Python <code>bytes</code> are immutable, OpenSSL keeps internal copies, and the base64 DEK string in a JSON response cannot be wiped in JavaScript. We minimise the lifetime and the number of copies; a production KMS would keep keys inside an HSM.</div>
+  <figure><img src="../img/kms-key-hierarchy.png" alt="Key detail page" /><figcaption>Figure 1. Key detail page: configuration, the Root KEK that seals this CMK, and the three-tier hierarchy view.</figcaption></figure>
+</section>
+
+<!-- ============================================================ WORKFLOWS -->
+<section>
+  <h2><span class="n">05</span>Protocol workflows</h2>
+  <h3>Upload: plaintext to ciphertext</h3>
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant U as Browser
+  participant K as Stratus KMS
+  participant V as Stratus Vault
+  U->>K: GenerateDataKey(cmk, context)
+  K->>K: authorize tenant + ACL + state + context.tenant
+  K->>K: unseal CMK vN under Root KEK, DEK = random(32)
+  K-->>U: DEK, blob = AES-KW(DEK) ‖ HMAC(context)
+  U->>U: import DEK non-extractable, wipe raw bytes
+  U->>U: c = AES-256-GCM(DEK, IV, AAD = context, file)
+  U->>V: store c + envelope (IV, blob, context)
+  V-->>U: stored (SHA-256 of c)
+  </div>
+  <h3>Download: ciphertext to plaintext</h3>
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant U as Browser
+  participant V as Stratus Vault
+  participant K as Stratus KMS
+  U->>V: get object + envelope
+  V-->>U: c, IV, blob, context
+  U->>K: Decrypt(blob, context)
+  K->>K: authorize, verify HMAC (constant time), unwrap
+  K-->>U: DEK
+  U->>U: import + wipe, AES-GCM decrypt, verify tag
+  </div>
+  <h3>Rotation and re-wrap</h3>
+  <div class="mermaid">
+sequenceDiagram
+  participant A as Key admin
+  participant K as Stratus KMS
+  participant V as Stratus Vault
+  A->>K: Rotate(cmk)
+  K->>K: lock row, create vN+1, primary = vN+1
+  loop objects on old versions
+    A->>K: ReEncrypt(blob, context)
+    K-->>A: blob under vN+1 (DEK never leaves KMS)
+    A->>V: update envelope only
+  end
+  </div>
+</section>
+
+<!-- ============================================================ CONCURRENCY -->
+<section>
+  <h2><span class="n">06</span>Multi-tenancy and concurrency</h2>
+  <table>
+    <tr><th style="width:30%">Mechanism</th><th>Detail</th></tr>
+    <tr><td>Tenant isolation</td><td>Every key and bucket belongs to one tenant, and every query is filtered by the caller's tenant from the signed token. Keys of other tenants return <code>AccessDeniedException</code>.</td></tr>
+    <tr><td>Per-key ACL</td><td><i>user</i> may encrypt and decrypt; <i>admin</i> may also rotate, disable, delete and grant. Grants are restricted to the same tenant.</td></tr>
+    <tr><td>Context policy</td><td>The encryption context must name the caller's tenant, and the HMAC ties it to the blob.</td></tr>
+    <tr><td>Rotation safety</td><td>A per-key in-process lock, <code>SELECT … FOR UPDATE</code> on Postgres, and <code>UNIQUE(cmk_id, version)</code> with retry guarantee unique, gap-free versions.</td></tr>
+    <tr><td>Consistent reads</td><td>GenerateDataKey reads the primary version and its sealed material in one transaction, so a blob always names a version that exists.</td></tr>
+    <tr><td>Throttling</td><td>Token bucket per user (200 burst, 100/s); 8 denials in 60 s give a 30 s lockout; 5 failed sign-ins give a 60 s lockout.</td></tr>
+  </table>
+  <h3>Load test</h3>
+  <p><code>scripts/loadtest.py</code> fires 100 GenerateDataKey → Decrypt round trips from two Acme users on 24 threads. Mixed into the same queue are 25 attempts by Mallory (Globex) to unwrap a stolen Acme blob, and three key rotations landing mid-traffic. It asserts that every DEK round-trips unchanged, that rotations mint unique versions, and that no cross-tenant call succeeds.</p>
+  <pre>Firing 100 round-trips + 25 cross-tenant attacks + 3 rotations on 24 workers...
+ legitimate round-trips  100/100 ok   in 5.18s (19.3/s)
+ latency (gen+decrypt)   p50 189.1 ms   p95 2370.6 ms
+ rotations               versions [2, 3, 4]   key versions used [1, 2, 3, 4]
+ cross-tenant attempts   25 blocked, 0 succeeded
+PASS</pre>
+  <p class="muted">Measured locally on SQLite, which serialises writes (every call appends an audit row); this explains the p95 tail. The deployed Postgres backend allows concurrent writers.</p>
+  <figure><img src="../img/activity.png" alt="Activity log" /><figcaption>Figure 2. Activity log: every KMS and Vault call for the tenant, including refused ones.</figcaption></figure>
+</section>
+
+<!-- ============================================================ APP -->
+<section>
+  <h2><span class="n">07</span>Application and usability</h2>
+  <p>The console is built with Cloudscape, an open-source design system for cloud consoles. Abstract steps are made visible:</p>
+  <ul>
+    <li>The <b>Envelope Inspector</b> animates each upload and download across three lanes (Browser, KMS, Vault). It shows exactly what each party holds, and the DEK memory flipping to <code>00</code>.</li>
+    <li><b>Raw view</b> shows the bytes the storage server actually stores for an object.</li>
+    <li>A <b>guided walkthrough</b> (tutorial panel with hotspots), <b>Info</b> help panels on every page, and <b>glossary popovers</b> on terms such as DEK, CMK, KEK and encryption context help first-time users.</li>
+    <li><b>Demo personas</b> (Alice, Bob, Mallory) give one-click sign-in for live demonstrations; password sign-in with lockout is also available.</li>
+  </ul>
+  <figure><img src="../img/inspector-upload.png" alt="Envelope Inspector" /><figcaption>Figure 3. Envelope Inspector during an upload: context sent, wrapped DEK received, raw DEK zeroized, local AES-256-GCM, ciphertext stored.</figcaption></figure>
+</section>
+<section>
+  <div class="two">
+    <figure><img src="../img/vault-raw-view.png" alt="Raw view" /><figcaption>Figure 4. Raw view: everything the Vault holds for one object.</figcaption></figure>
+    <figure><img src="../img/walkthrough.png" alt="Walkthrough" /><figcaption>Figure 5. Guided walkthrough with a hotspot on the side navigation.</figcaption></figure>
+  </div>
+  <div class="two">
+    <figure><img src="../img/console-dashboard.png" alt="Dashboard" /><figcaption>Figure 6. Console dashboard and trust-boundary summary.</figcaption></figure>
+    <figure><img src="../img/landing-hero.png" alt="Landing page" /><figcaption>Figure 7. Public landing page.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============================================================ THREAT MODEL -->
+<section>
+  <h2><span class="n">08</span>Threat model</h2>
+  <h3>Assumptions</h3>
+  <table>
+    <tr><th style="width:24%">Party</th><th>Assumption</th></tr>
+    <tr><td>User's browser</td><td>Trusted. Endpoint malware is out of scope.</td></tr>
+    <tr><td>Stratus KMS host</td><td>Trusted for keys and policy (the role an HSM plays in production). Host compromise is out of scope.</td></tr>
+    <tr><td>Stratus Vault</td><td><b>Untrusted:</b> honest-but-curious or actively malicious.</td></tr>
+    <tr><td>Other tenants</td><td>Authenticated but malicious.</td></tr>
+    <tr><td>Network</td><td>Untrusted; TLS provided by the hosting platforms.</td></tr>
+  </table>
+  <h3>Attack surface and mitigations</h3>
+  <table>
+    <tr><th style="width:26%">Adversary / attack</th><th>Mitigation</th><th style="width:16%">Evidence</th></tr>
+    <tr><td>Storage reads all data</td><td>Client-side AES-256-GCM; Vault holds no usable key</td><td>Lab 1, e2e test</td></tr>
+    <tr><td>Storage flips bits</td><td>GCM authentication tag over ciphertext, IV and AAD</td><td>Lab 3</td></tr>
+    <tr><td>Storage swaps or replays objects</td><td>Context as GCM AAD and as HMAC inside the wrapped key</td><td>Lab 4</td></tr>
+    <tr><td>Tenant reads another tenant</td><td>Tenant checks in Vault and KMS; per-key ACL</td><td>Lab 2</td></tr>
+    <tr><td>Stolen wrapped keys</td><td>KMS ownership + ACL + context check; denials logged and counted</td><td>Lab 2</td></tr>
+    <tr><td>Brute force / flood</td><td>Rate limit, denial lockout, login lockout</td><td>Lab 2, tests</td></tr>
+    <tr><td>Data in old backups</td><td>Crypto-shredding by CMK deletion</td><td>Lab 5</td></tr>
+    <tr><td>Forged sessions by storage</td><td>Signing key only in the KMS (Ed25519)</td><td>Design</td></tr>
+  </table>
+  <h3>STRIDE</h3>
+  <table>
+    <tr><th>Threat</th><th>Control</th></tr>
+    <tr><td>Spoofing</td><td>Signed short-lived tokens, scrypt, sign-in lockout</td></tr>
+    <tr><td>Tampering</td><td>GCM tags, HMAC on wrapped keys, AES-KW integrity on sealed CMKs</td></tr>
+    <tr><td>Repudiation</td><td>Audit logs on both services, including refused calls</td></tr>
+    <tr><td>Information disclosure</td><td>Client-side encryption, tenant scoping, no secrets in logs</td></tr>
+    <tr><td>Denial of service</td><td>Rate limits, 10 MB object cap, bounded blob size</td></tr>
+    <tr><td>Elevation of privilege</td><td>Separate <i>use</i> and <i>manage</i> roles; no cross-tenant grants</td></tr>
+  </table>
+  <h3>Side channels and integration hazards</h3>
+  <ul>
+    <li><b>Timing.</b> HMAC verification and password comparison are constant time. Unwrap failures return one generic error, so an attacker cannot tell which check failed.</li>
+    <li><b>Randomness.</b> All keys and IVs come from the OS CSPRNG (<code>os.urandom</code>, <code>crypto.getRandomValues</code>). A fresh DEK per object means a 96-bit random IV is never reused under one key.</li>
+    <li><b>Padding.</b> GCM needs no padding; RSA uses OAEP only.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ ATTACKS -->
+<section>
+  <h2><span class="n">09</span>Attack simulations</h2>
+  <p>The Security Lab runs each attack live against the deployed services, using the demo personas, and then explains the defence. Temporary objects and keys are cleaned up afterwards.</p>
+  <figure><img src="../img/lab-1.png" alt="Lab 1" /><figcaption>Lab 1. A compromised storage administrator dumps every tenant's rows. Keyword search finds nothing; only ciphertext and wrapped keys are present.</figcaption></figure>
+  <figure><img src="../img/lab-2.png" alt="Lab 2" /><figcaption>Lab 2. Mallory (Globex) is refused by the Vault, by the KMS with a stolen blob, and with a forged context; rapid retries trigger 429 throttling.</figcaption></figure>
+</section>
+<section>
+  <figure><img src="../img/lab-3.png" alt="Lab 3" /><figcaption>Lab 3. One flipped bit in stored ciphertext: AES-GCM refuses to decrypt, while the untouched copy still opens.</figcaption></figure>
+  <figure><img src="../img/lab-4.png" alt="Lab 4" /><figcaption>Lab 4. Wrapped key and ciphertext swapped between two objects: rejected by the KMS context HMAC and by GCM's AAD check.</figcaption></figure>
+  <figure><img src="../img/lab-5.png" alt="Lab 5" /><figcaption>Lab 5. Crypto-shredding: after the CMK is deleted, ciphertext and wrapped key still exist, but nothing can ever decrypt them.</figcaption></figure>
+</section>
+
+<!-- ============================================================ TRADEOFFS -->
+<section>
+  <h2><span class="n">10</span>Security vs. usability</h2>
+  <p>The Trade-offs page benchmarks the running system from the browser. Representative results (Edge, laptop, local services):</p>
+  <div class="kpis">
+    <div><b>≈10 ms</b><span>GenerateDataKey round trip, any file size</span></div>
+    <div><b>377–781 MB/s</b><span>AES-256-GCM in the browser (10 MB file)</span></div>
+    <div><b>6.5–7.3×</b><span>RSA-OAEP unwrap cost vs. AES-KW (server time)</span></div>
+    <div><b>16 B</b><span>ciphertext overhead (GCM tag) + ~100 B wrapped key</span></div>
+  </div>
+  <figure><img src="../img/tradeoffs.png" alt="Trade-offs" style="max-height:150mm;object-fit:contain;object-position:top" /><figcaption>Figure 8. Live benchmarks: GCM cost by size, wrapping algorithm cost, and rotation cost (re-wrap vs. re-encrypt).</figcaption></figure>
+  <table>
+    <tr><th>Choice</th><th>Security gained</th><th>Cost</th></tr>
+    <tr><td>Encrypt in the browser</td><td>Storage never sees data or keys</td><td>No server-side search or previews; whole file in memory (10 MB cap)</td></tr>
+    <tr><td>Fresh DEK per object</td><td>Small blast radius; no IV reuse</td><td>One KMS round trip per upload</td></tr>
+    <tr><td>RSA-OAEP wrapping</td><td>Public-key wrapping possible</td><td>Unwrap 6–7× slower than AES-KW</td></tr>
+    <tr><td>Context binding</td><td>Stops swap and replay</td><td>32-byte HMAC per blob; context must be stored</td></tr>
+    <tr><td>Envelope rotation</td><td>Rotate without downtime</td><td>Old versions stay live until re-wrapped</td></tr>
+    <tr><td>Deletion waiting window</td><td>Prevents accidental shredding</td><td>Slow revocation; use disable or access removal for an immediate stop</td></tr>
+    <tr><td>Rate limits and lockout</td><td>Throttle brute force</td><td>Legitimate bursts above 100/s are slowed</td></tr>
+  </table>
+  <p>The key result is the rotation chart. With envelope encryption, rotating a 10 MB object costs one ~300-byte KMS call, the same as for a 16 KB object. Re-encrypting the payload grows with file size, and also needs a full download and re-upload.</p>
+</section>
+
+<!-- ============================================================ HURDLES -->
+<section>
+  <h2><span class="n">11</span>Implementation hurdles</h2>
+  <table>
+    <tr><th style="width:28%">Problem</th><th>What happened and how we fixed it</th></tr>
+    <tr><td>AES Key Wrap has no associated data</td><td>A wrapped DEK on its own could be replayed against a different object. We added an HMAC over the blob and the canonical encryption context with an HKDF-separated key, and reused the same context as the GCM AAD.</td></tr>
+    <tr><td>Connection-pool deadlock under load</td><td>The first load test produced HTTP 500s and 30 s stalls. Each request held one DB connection while the audit logger opened a second; with 24 concurrent threads the pool ran dry and requests waited on each other. Audit writes now reuse the request's connection.</td></tr>
+    <tr><td>Reported version after concurrent rotations</td><td>Four parallel rotations created versions 2–5 correctly, but the API reported the <i>current</i> primary, which another request had already advanced. Rotation now returns the version it minted. The concurrency test caught this.</td></tr>
+    <tr><td>Canonical context across languages</td><td>The HMAC and AAD require byte-identical JSON in Python and JavaScript. Both sides sort keys and use compact separators; the end-to-end tests cross the boundary in both directions.</td></tr>
+    <tr><td>Zeroization in managed runtimes</td><td>Immutable strings and GC copies make perfect wiping impossible. We restricted secrets to mutable buffers and non-extractable keys, wiped in <code>finally</code> blocks, and documented the residual risk.</td></tr>
+    <tr><td>Free-tier hosting</td><td>Ephemeral disks would wipe SQLite, and a regenerated Root KEK would shred all data. We moved to managed Postgres, put the Root KEK in a persistent secret, and added a warm-up script for cold starts.</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ TESTING -->
+<section>
+  <h2><span class="n">12</span>Testing, deployment and limitations</h2>
+  <h3>Automated tests (24)</h3>
+  <table>
+    <tr><th>Group</th><th>Covers</th></tr>
+    <tr><td>Crypto unit tests (8)</td><td>RFC 3394 §4.1 and §4.6 vectors, zeroize, AES-KW and RSA round trips, context-swap rejection, tampered blob, wrong Root KEK</td></tr>
+    <tr><td>KMS API tests (11)</td><td>Password login and lockout, envelope round trip, both algorithms, cross-tenant denial, context mismatch, rotation and ReEncrypt, revoke/disable/shred, role separation, 40 concurrent data keys with 4 concurrent rotations, audit scoping</td></tr>
+    <tr><td>End-to-end tests (5)</td><td>Storage sees only ciphertext, RSA objects, cross-tenant blocked at both services, tamper and swap detection, rotate + re-wrap keeps ciphertext hash</td></tr>
+  </table>
+  <h3>Deployment</h3>
+  <p>Stratus KMS and Stratus Vault are deployed as two Render web services from <code>render.yaml</code>, each with its own Neon Postgres database and role. The console is deployed on Vercel. Secrets are set per service in the hosting dashboards and are never committed. CORS is limited to the console origin.</p>
+  <h3>Limitations and future work</h3>
+  <ul>
+    <li>The Root KEK is an environment secret; production systems keep it in an HSM, ideally with Root KEK rotation and multi-party control.</li>
+    <li>Database point-in-time recovery could restore deleted CMK rows within the provider's retention window. True crypto-shredding needs key storage whose deletion is final.</li>
+    <li>Rate-limit state is in memory (single instance); scaling out needs a shared store.</li>
+    <li>Files are encrypted in one GCM call, capped at 10 MB. Large files would need chunked (streaming) AEAD.</li>
+    <li>Asymmetric CMKs could expose <code>GetPublicKey</code> so clients wrap DEKs fully offline.</li>
+  </ul>
+  <h3>References</h3>
+  <ol style="font-size:8.8pt">
+    <li>RFC 3394, Advanced Encryption Standard (AES) Key Wrap Algorithm, 2002.</li>
+    <li>RFC 5649, AES Key Wrap with Padding Algorithm, 2009.</li>
+    <li>NIST SP 800-38D, Recommendation for Block Cipher Modes: GCM and GMAC, 2007.</li>
+    <li>RFC 8017, PKCS #1: RSA Cryptography Specifications v2.2 (OAEP), 2016.</li>
+    <li>RFC 5869, HMAC-based Extract-and-Expand Key Derivation Function (HKDF), 2010.</li>
+    <li>NIST SP 800-57 Part 1 Rev. 5, Recommendation for Key Management, 2020.</li>
+    <li>W3C, Web Cryptography API, Recommendation, 2017.</li>
+    <li>pyca/cryptography documentation, cryptography.io.</li>
+  </ol>
+</section>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose',
+    themeVariables: { fontFamily: 'Inter, Segoe UI, sans-serif', fontSize: '13px', primaryColor: '#f6f3ec', primaryBorderColor: '#0f1b2a', lineColor: '#5b6472' } });
+</script>
+</body>
+</html>
