@@ -115,7 +115,7 @@
       <div><b>24</b><span>automated tests incl. RFC 3394 vectors and end-to-end flows</span></div>
       <div><b>0 / 25</b><span>cross-tenant requests succeeded under a 100-request concurrent load</span></div>
       <div><b>5</b><span>live attacks in the Security Lab, each stopped</span></div>
-      <div><b>~10 ms</b><span>data-key round trip, constant regardless of file size</span></div>
+      <div><b>≈30 ms</b><span>data-key round trip (local Postgres), constant regardless of file size</span></div>
     </div>
 
     <h3>Requirements and where they are met</h3>
@@ -287,12 +287,12 @@ sequenceDiagram
   <h3>Load test</h3>
   <p><code>scripts/loadtest.py</code> fires 100 GenerateDataKey → Decrypt round trips from two Acme users on 24 threads. Mixed into the same queue are 25 attempts by Mallory (Globex) to unwrap a stolen Acme blob, and three key rotations landing mid-traffic. It asserts that every DEK round-trips unchanged, that rotations mint unique versions, and that no cross-tenant call succeeds.</p>
   <pre>Firing 100 round-trips + 25 cross-tenant attacks + 3 rotations on 24 workers...
- legitimate round-trips  100/100 ok   in 5.18s (19.3/s)
- latency (gen+decrypt)   p50 189.1 ms   p95 2370.6 ms
+ legitimate round-trips  100/100 ok   in 2.00s (50.0/s)
+ latency (gen+decrypt)   p50 396.6 ms   p95 508.8 ms
  rotations               versions [2, 3, 4]   key versions used [1, 2, 3, 4]
  cross-tenant attempts   25 blocked, 0 succeeded
 PASS</pre>
-  <p class="muted">Measured locally on SQLite, which serialises writes (every call appends an audit row); this explains the p95 tail. The deployed Postgres backend allows concurrent writers.</p>
+  <p class="muted">Measured locally against PostgreSQL 16 (two databases, two roles, as in production). The same test also passes on SQLite, and all 24 automated tests pass on both backends.</p>
   <figure><img src="../img/activity.png" alt="Activity log" /><figcaption>Figure 2. Activity log: every KMS and Vault call for the tenant, including refused ones.</figcaption></figure>
 </section>
 
@@ -364,7 +364,7 @@ PASS</pre>
 <!-- ============================================================ ATTACKS -->
 <section>
   <h2><span class="n">09</span>Attack simulations</h2>
-  <p>The Security Lab runs each attack live against the deployed services, using the demo personas, and then explains the defence. Temporary objects and keys are cleaned up afterwards.</p>
+  <p>The Security Lab runs each attack live against the running services (shown here on the local Postgres deployment), using the demo personas, and then explains the defence. Temporary objects and keys are cleaned up afterwards.</p>
   <figure><img src="../img/lab-1.png" alt="Lab 1" /><figcaption>Lab 1. A compromised storage administrator dumps every tenant's rows. Keyword search finds nothing; only ciphertext and wrapped keys are present.</figcaption></figure>
   <figure><img src="../img/lab-2.png" alt="Lab 2" /><figcaption>Lab 2. Mallory (Globex) is refused by the Vault, by the KMS with a stolen blob, and with a forged context; rapid retries trigger 429 throttling.</figcaption></figure>
 </section>
@@ -377,11 +377,11 @@ PASS</pre>
 <!-- ============================================================ TRADEOFFS -->
 <section>
   <h2><span class="n">10</span>Security vs. usability</h2>
-  <p>The Trade-offs page benchmarks the running system from the browser. Representative results (Edge, laptop, local services):</p>
+  <p>The Trade-offs page benchmarks the running system from the browser. Results from one run (Edge, laptop, local services on PostgreSQL; server times include the audit-log commit):</p>
   <div class="kpis">
-    <div><b>≈10 ms</b><span>GenerateDataKey round trip, any file size</span></div>
-    <div><b>377–781 MB/s</b><span>AES-256-GCM in the browser (10 MB file)</span></div>
-    <div><b>6.5–7.3×</b><span>RSA-OAEP unwrap cost vs. AES-KW (server time)</span></div>
+    <div><b>≈30 ms</b><span>GenerateDataKey round trip, any file size</span></div>
+    <div><b>≈590 MB/s</b><span>AES-256-GCM encryption in the browser (10 MB file)</span></div>
+    <div><b>≈2.7×</b><span>RSA-OAEP Decrypt vs. AES-KW (server time, 74 vs. 28 ms)</span></div>
     <div><b>16 B</b><span>ciphertext overhead (GCM tag) + ~100 B wrapped key</span></div>
   </div>
   <figure><img src="../img/tradeoffs.png" alt="Trade-offs" style="max-height:150mm;object-fit:contain;object-position:top" /><figcaption>Figure 8. Live benchmarks: GCM cost by size, wrapping algorithm cost, and rotation cost (re-wrap vs. re-encrypt).</figcaption></figure>
@@ -389,13 +389,13 @@ PASS</pre>
     <tr><th>Choice</th><th>Security gained</th><th>Cost</th></tr>
     <tr><td>Encrypt in the browser</td><td>Storage never sees data or keys</td><td>No server-side search or previews; whole file in memory (10 MB cap)</td></tr>
     <tr><td>Fresh DEK per object</td><td>Small blast radius; no IV reuse</td><td>One KMS round trip per upload</td></tr>
-    <tr><td>RSA-OAEP wrapping</td><td>Public-key wrapping possible</td><td>Unwrap 6–7× slower than AES-KW</td></tr>
+    <tr><td>RSA-OAEP wrapping</td><td>Public-key wrapping possible</td><td>Decrypt ≈2.7× slower than AES-KW end to end on the server</td></tr>
     <tr><td>Context binding</td><td>Stops swap and replay</td><td>32-byte HMAC per blob; context must be stored</td></tr>
     <tr><td>Envelope rotation</td><td>Rotate without downtime</td><td>Old versions stay live until re-wrapped</td></tr>
     <tr><td>Deletion waiting window</td><td>Prevents accidental shredding</td><td>Slow revocation; use disable or access removal for an immediate stop</td></tr>
     <tr><td>Rate limits and lockout</td><td>Throttle brute force</td><td>Legitimate bursts above 100/s are slowed</td></tr>
   </table>
-  <p>The key result is the rotation chart. With envelope encryption, rotating a 10 MB object costs one ~300-byte KMS call, the same as for a 16 KB object. Re-encrypting the payload grows with file size, and also needs a full download and re-upload.</p>
+  <p>The key result is the rotation chart. With envelope encryption, rotating a 10 MB object costs one ~300-byte KMS call, the same as for a 16 KB object (about 33 ms in our run). Re-encrypting the payload grows with file size, and also needs a full download and re-upload.</p>
 </section>
 
 <!-- ============================================================ HURDLES -->
@@ -408,6 +408,7 @@ PASS</pre>
     <tr><td>Reported version after concurrent rotations</td><td>Four parallel rotations created versions 2–5 correctly, but the API reported the <i>current</i> primary, which another request had already advanced. Rotation now returns the version it minted. The concurrency test caught this.</td></tr>
     <tr><td>Canonical context across languages</td><td>The HMAC and AAD require byte-identical JSON in Python and JavaScript. Both sides sort keys and use compact separators; the end-to-end tests cross the boundary in both directions.</td></tr>
     <tr><td>Zeroization in managed runtimes</td><td>Immutable strings and GC copies make perfect wiping impossible. We restricted secrets to mutable buffers and non-extractable keys, wiped in <code>finally</code> blocks, and documented the residual risk.</td></tr>
+    <tr><td>A 2.5 s latency tail</td><td>The load test showed p95 ≈ 2.5 s while server-side time stayed under 100 ms. Measuring both sides showed the delay was on the client: Windows tried IPv6 <code>::1</code> for <code>localhost</code> before falling back to 127.0.0.1. With 127.0.0.1 the p95 fell to 0.5 s and throughput rose from 18 to 50 round trips per second.</td></tr>
     <tr><td>Free-tier hosting</td><td>Ephemeral disks would wipe SQLite, and a regenerated Root KEK would shred all data. We moved to managed Postgres, put the Root KEK in a persistent secret, and added a warm-up script for cold starts.</td></tr>
   </table>
 </section>

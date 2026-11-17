@@ -105,7 +105,9 @@ export default function Tradeoffs() {
     setRunning(true);
     setError(null);
     try {
-      setRes(await runBench((p, msg) => setProg({ p, msg })));
+      const r = await runBench((p, msg) => setProg({ p, msg }));
+      console.info('[stratus-bench]', JSON.stringify(r)); // raw numbers for the report
+      setRes(r);
     } catch (e) {
       setError(errorText(e));
     } finally {

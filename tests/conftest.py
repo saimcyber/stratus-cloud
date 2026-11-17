@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 _signing = Ed25519PrivateKey.generate()
 _tmp = tempfile.mkdtemp()
-os.environ.update({
+for _k, _v in {
     "KMS_DATABASE_URL": f"sqlite:///{_tmp}/kms.db",
     "VAULT_DATABASE_URL": f"sqlite:///{_tmp}/vault.db",
     "ROOT_KEK": base64.b64encode(os.urandom(32)).decode(),
@@ -19,6 +19,7 @@ os.environ.update({
     "JWT_PUBLIC_KEY": base64.b64encode(_signing.public_key().public_bytes(
         serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)).decode(),
     "DEMO_MODE": "true",
-})
+}.items():
+    os.environ.setdefault(_k, _v)  # lets CI point the tests at Postgres
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "services" / "kms"), str(ROOT / "services" / "vault"), str(ROOT / "sdk")]

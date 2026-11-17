@@ -7,7 +7,7 @@ same key with stolen wrapped blobs. Asserts:
   * every rotation produced a unique version number
   * zero cross-tenant requests succeed
 
-    python scripts/loadtest.py --kms http://localhost:8001 --vault http://localhost:8002 -n 100
+    python scripts/loadtest.py --kms http://127.0.0.1:8001 --vault http://127.0.0.1:8002 -n 100
 """
 from __future__ import annotations
 
@@ -29,8 +29,8 @@ CTX = {"tenant": "acme-health", "bucket": "acme-patient-records", "object": "loa
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--kms", default="http://localhost:8001")
-    ap.add_argument("--vault", default="http://localhost:8002")
+    ap.add_argument("--kms", default="http://127.0.0.1:8001")
+    ap.add_argument("--vault", default="http://127.0.0.1:8002")
     ap.add_argument("-n", type=int, default=100, help="legitimate round-trips")
     ap.add_argument("--workers", type=int, default=24)
     args = ap.parse_args()

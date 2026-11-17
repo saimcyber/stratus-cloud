@@ -10,6 +10,10 @@ const { applyTheme } = require(process.env.PPTX_SKILL + '/scripts/apply_theme.js
 const ROOT = process.argv[2];
 const OUT = path.join(ROOT, 'docs', 'Stratus-Presentation.pptx');
 const IMG = (n) => path.join(ROOT, 'docs', 'img', n);
+// Real numbers captured from the Trade-offs page by docs/tools/capture.mjs
+const BENCH = JSON.parse(require('fs').readFileSync(IMG('bench.json'), 'utf8'));
+const r1 = (x) => Math.round(x * 10) / 10;
+const RSA_X = BENCH.wrap[1].rsa / BENCH.wrap[1].aes;
 
 const HEX = {
   ink: '0F1B2A', ink2: '16243A', paper: 'F6F3EC', amber: 'FF9900', amberD: 'B85F00',
@@ -331,19 +335,19 @@ async function icon(Comp, color, size = 256) {
     valGridLine: { color: 'E6E0D3', size: 0.75 }, catGridLine: { style: 'none' }, titleFontFace: '+mn-lt', titleFontSize: 15, titleColor: HEX.ink,
     legendFontFace: '+mn-lt', legendFontSize: 12, legendColor: HEX.slate, showLegend: true, legendPos: 'b', valAxisTitleFontFace: '+mn-lt' };
   s.addChart(pres.charts.BAR, [
-    { name: 'AES Key Wrap', labels: ['GenerateDataKey', 'Decrypt'], values: [7.5, 7.5] },
-    { name: 'RSA-2048-OAEP', labels: ['GenerateDataKey', 'Decrypt'], values: [7.0, 49.5] },
+    { name: 'AES Key Wrap', labels: ['GenerateDataKey', 'Decrypt'], values: BENCH.wrap.map((w) => r1(w.aes)) },
+    { name: 'RSA-2048-OAEP', labels: ['GenerateDataKey', 'Decrypt'], values: BENCH.wrap.map((w) => r1(w.rsa)) },
   ], { x: 0.6, y: 1.75, w: 5.9, h: 4.3, barDir: 'col', barGapWidthPct: 60, chartColors: [HEX.ink, HEX.amber], showTitle: true, title: 'KMS server time (ms)',
     showValue: true, dataLabelPosition: 'outEnd', dataLabelFontSize: 12, dataLabelColor: HEX.ink, dataLabelFontFace: '+mn-lt', dataLabelFormatCode: '0.0', ...axis, objectName: 'chart-wrap' });
   s.addChart(pres.charts.LINE, [
-    { name: 'Re-wrap the data key', labels: ['16 KB', '256 KB', '1 MB', '4 MB', '10 MB'], values: [12, 12, 12, 12, 12] },
-    { name: 'Re-encrypt the file (crypto only)', labels: ['16 KB', '256 KB', '1 MB', '4 MB', '10 MB'], values: [0.2, 0.6, 3.6, 11, 41] },
+    { name: 'Re-wrap the data key', labels: BENCH.gcm.map((g) => g.size), values: BENCH.gcm.map(() => r1(BENCH.rewrapMs)) },
+    { name: 'Re-encrypt the file (crypto only)', labels: BENCH.gcm.map((g) => g.size), values: BENCH.gcm.map((g) => r1(g.enc + g.dec)) },
   ], { x: 6.8, y: 1.75, w: 5.9, h: 4.3, chartColors: [HEX.ink, HEX.amber], lineSize: 3, lineDataSymbol: 'circle', lineDataSymbolSize: 7, showTitle: true, title: 'Rotating one object (ms)', ...axis, objectName: 'chart-rotation' });
   txt(s, [
-    { text: 'RSA unwrap costs about 6.5× more. ', options: { bold: true } },
+    { text: `RSA unwrap costs about ${RSA_X.toFixed(1)}× more. `, options: { bold: true } },
     { text: 'Re-wrapping is flat; re-encrypting grows with file size and also needs a full download and re-upload.' },
   ], { x: 0.6, y: 6.25, w: 12.1, h: 0.55, fontSize: 15, color: C.text1, objectName: 'tradeoff-caption' });
-  s.addNotes('Measured live from the browser on the Trade-offs page (one representative run). Other numbers: about 10 ms per data-key round trip, hundreds of MB/s for AES-GCM in the browser, 16 bytes of ciphertext overhead.');
+  s.addNotes(`Measured live from the browser on the Trade-offs page, one local run on Postgres. Data-key round trip about ${Math.round(BENCH.dataKeyMs)} ms; AES-GCM at about ${Math.round(BENCH.gcm.at(-1).mbps)} MB/s in the browser; 16 bytes of ciphertext overhead.`);
 
   // ================================================================= 13. Usability
   pres.addSection({ title: 'Product' });

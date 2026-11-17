@@ -1,6 +1,6 @@
 """Upload a few sample files (encrypted client-side) so the demo buckets aren't empty.
 
-    python scripts/seed_objects.py --kms http://localhost:8001 --vault http://localhost:8002
+    python scripts/seed_objects.py --kms http://127.0.0.1:8001 --vault http://127.0.0.1:8002
 """
 from __future__ import annotations
 
@@ -30,8 +30,8 @@ SAMPLES = {
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--kms", default="http://localhost:8001")
-    ap.add_argument("--vault", default="http://localhost:8002")
+    ap.add_argument("--kms", default="http://127.0.0.1:8001")
+    ap.add_argument("--vault", default="http://127.0.0.1:8002")
     args = ap.parse_args()
     for (user, bucket, alias), files in SAMPLES.items():
         c = StratusClient(httpx.Client(base_url=args.kms, timeout=60), httpx.Client(base_url=args.vault, timeout=60))

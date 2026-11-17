@@ -8,7 +8,7 @@ from __future__ import annotations
 import threading
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -111,7 +111,12 @@ class BlobIn(BaseModel):
 
 
 def _iso(dt: datetime | None) -> str | None:
-    return dt.isoformat() if dt else None
+    """ISO-8601 with an explicit UTC offset. SQLite returns naive datetimes; we always store UTC."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
 
 
 def key_view(cmk: CMK, p: Principal) -> dict:

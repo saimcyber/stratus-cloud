@@ -99,13 +99,14 @@ Demo identities (password `stratus-demo`, or one click on the sign-in page):
 
 ```bash
 python -m pytest services/kms/tests tests              # 24 tests: RFC 3394 vectors, lifecycle, ACLs, tamper, e2e
+# same suite on Postgres: set KMS_DATABASE_URL / VAULT_DATABASE_URL to empty databases first
 python scripts/loadtest.py -n 100                       # concurrent data keys + mid-flight rotation + attacks
 ```
 
-Sample load-test output (local, SQLite):
+Sample load-test output (local, PostgreSQL 16):
 
 ```
-legitimate round-trips  100/100 ok   in 5.14s (19.5/s)
+legitimate round-trips  100/100 ok   in 2.00s (50.0/s)
 rotations               versions [2, 3, 4]   key versions used [1, 2, 3, 4]
 cross-tenant attempts   25 blocked, 0 succeeded
 PASS

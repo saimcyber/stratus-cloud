@@ -1,6 +1,6 @@
 // Captures documentation screenshots of the running local app with headless Edge.
 import { chromium } from 'playwright-core';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 
 const OUT = process.argv[2];
 const BASE = 'http://localhost:5173';
@@ -88,10 +88,13 @@ for (let i = 0; i < 5; i++) {
 
 // ---------------- Trade-offs
 await page.goto(BASE + '/console/tradeoffs');
+let bench = null;
+page.on('console', (m) => { if (m.text().startsWith('[stratus-bench]')) bench = m.text().slice('[stratus-bench] '.length); });
 await page.getByRole('button', { name: 'Run benchmarks' }).click();
 await page.getByRole('button', { name: 'Run again' }).waitFor({ timeout: 90000 });
 await sleep(1200);
 await shot('tradeoffs', { fullPage: true });
+if (bench) { writeFileSync(`${OUT}/bench.json`, JSON.stringify(JSON.parse(bench), null, 2)); console.log('saved bench.json'); }
 
 // ---------------- Activity + walkthrough + dark mode
 await page.goto(BASE + '/console/activity');
