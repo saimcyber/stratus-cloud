@@ -127,8 +127,7 @@ export default function Shell() {
           <TopNavigation
             identity={{
               href: '/console',
-              title: 'Stratus Console',
-              logo: { src: '/favicon.svg', alt: 'Stratus' },
+              logo: { src: '/wordmark.svg', alt: 'Stratus Cloud console' },
               onFollow: (e) => {
                 e.preventDefault();
                 navigate('/console');

@@ -6,15 +6,20 @@ import './landing.css';
 const FILE_LINES = ['Patient 4471', 'Diagnosis: type 2 diabetes', 'Prescribed: metformin 500mg', 'Next review: 12 Jan'];
 const HEX = '0123456789abcdef';
 
+// Small integer hash so the 'ciphertext' looks random but is stable between frames.
+function mix(a: number, b: number) {
+  let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35);
+  h ^= h >>> 15;
+  h = Math.imul(h, 0x2c1b3c6d);
+  return (h ^ (h >>> 12)) >>> 0;
+}
+
 function scramble(text: string, progress: number, seed: number) {
   let out = '';
   for (let i = 0; i < text.length; i++) {
-    if (text[i] === ' ') {
-      out += progress > 0.6 ? HEX[(i * 7 + seed) % 16] : ' ';
-      continue;
-    }
-    const flip = (i * 13 + 7) % 100 < progress * 100;
-    out += flip ? HEX[(i * 31 + seed * 17) % 16] : text[i];
+    const flip = mix(i, 7) % 100 < progress * 100;
+    if (text[i] === ' ' && progress < 0.6) out += ' ';
+    else out += flip ? HEX[mix(i, seed) % 16] : text[i];
   }
   return out;
 }
