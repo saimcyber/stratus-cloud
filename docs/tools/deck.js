@@ -40,7 +40,7 @@ async function icon(Comp, color, size = 256) {
   const pres = new pptxgen();
   pres.layout = 'LAYOUT_WIDE'; // 13.333 x 7.5
   pres.title = 'Stratus Cloud: Envelope Encryption for Cloud Storage';
-  pres.author = 'Saim Zaib, Abdullah Sajid, Nihammad Amish';
+  pres.author = 'Saim Zaib, Abdullah Sajid, Muhammad Amish';
   pres.company = 'FAST NUCES Islamabad';
   pres.theme = { headFontFace: THEME.headFontFace, bodyFontFace: THEME.bodyFontFace };
   const C = pres.SchemeColor;
@@ -113,7 +113,7 @@ async function icon(Comp, color, size = 256) {
   s.addText([{ text: 'Envelope encryption', options: { breakLine: true } }, { text: 'for ' }, { text: 'cloud storage', options: { italic: true, color: C.accent1 } }], { placeholder: 'title' });
   s.addText('Stratus Cloud: a multi-tenant key management service and an untrusted object store', { placeholder: 'body' });
   strata(s, 8.1, 2.15, [['Root KEK', 'KMS only'], ['Customer managed key', 'per tenant'], ['Data key', 'per file']], true);
-  txt(s, 'Saim Zaib  ·  Abdullah Sajid  ·  Nihammad Amish', { x: 0.7, y: 6.3, w: 7.5, h: 0.35, fontSize: 14, color: C.background1, objectName: 'team' });
+  txt(s, 'Saim Zaib  ·  Abdullah Sajid  ·  Muhammad Amish', { x: 0.7, y: 6.3, w: 7.5, h: 0.35, fontSize: 14, color: C.background1, objectName: 'team' });
   txt(s, 'Instructor: Dr. Hina Binte Haq  ·  FAST NUCES Islamabad', { x: 0.7, y: 6.65, w: 7.5, h: 0.35, fontSize: 12, color: 'AEB6C2', objectName: 'instructor' });
   s.addNotes('Open with the one-line idea: the cloud should store data it can never read. Stratus is our working model of how a cloud KMS does that, with three keys in three places.');
 

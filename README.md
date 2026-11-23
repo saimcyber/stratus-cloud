@@ -6,7 +6,7 @@ by a tenant's customer managed key (CMK), which is in turn sealed by a Root KEK 
 in the KMS. The storage service only ever sees ciphertext and wrapped keys.
 
 **CS-3002 Information Security term project, FAST NUCES Islamabad.**
-Team: Saim Zaib (24I-2023), Abdullah Sajid (24I-2101), Nihammad Amish (24I-2099)
+Team: Saim Zaib (24I-2023), Abdullah Sajid (24I-2101), Muhammad Amish (24I-2099)
 
 | | |
 |---|---|
@@ -85,6 +85,7 @@ python scripts/run_services.py                          # KMS :8001, Vault :8002
 
 cd web && npm install && npm run dev                    # console on http://localhost:5173
 python scripts/seed_objects.py                          # optional: sample encrypted files
+python scripts/reset_demo.py                            # wipe everything back to the starting demo state
 ```
 
 Demo identities (password `stratus-demo`, or one click on the sign-in page):
