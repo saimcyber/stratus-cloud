@@ -1,10 +1,12 @@
 # Render Blueprint: two separate services = two trust domains.
 # Secrets are marked sync:false and entered in the Render dashboard (never committed).
+# scripts/setup_postgres.py writes them to kms.env / vault.env; paste each with "Add from .env".
 services:
   - type: web
     name: stratus-kms
     runtime: python
     plan: free
+    region: singapore           # next to the Neon database (AWS ap-southeast-1)
     rootDir: services/kms
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn stratus_kms.main:app --host 0.0.0.0 --port $PORT --proxy-headers
@@ -14,7 +16,7 @@ services:
         value: 3.11.9
       - key: KMS_DATABASE_URL      # Neon connection string for the kms database
         sync: false
-      - key: ROOT_KEK              # python scripts/gen_secrets.py --print
+      - key: ROOT_KEK              # from kms.env (scripts/setup_postgres.py)
         sync: false
       - key: JWT_PRIVATE_KEY
         sync: false
@@ -27,6 +29,7 @@ services:
     name: stratus-vault
     runtime: python
     plan: free
+    region: singapore           # next to the Neon database (AWS ap-southeast-1)
     rootDir: services/vault
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn stratus_vault.main:app --host 0.0.0.0 --port $PORT --proxy-headers
