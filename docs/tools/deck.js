@@ -5,7 +5,28 @@ const React = require('react');
 const ReactDOMServer = require('react-dom/server');
 const sharp = require('sharp');
 const fa = require('react-icons/fa');
-const { applyTheme } = require(process.env.PPTX_SKILL + '/scripts/apply_theme.js');
+const JSZip = require('jszip');
+
+// pptxgenjs cannot set theme colours, so write the colour scheme into ppt/theme/*.xml after saving.
+async function applyTheme(file, theme) {
+  const fs = require('fs');
+  const zip = await JSZip.loadAsync(fs.readFileSync(file), { createFolders: false });
+  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const order = ['dk1', 'lt1', 'dk2', 'lt2', 'accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6', 'hlink', 'folHlink'];
+  const scheme = `<a:clrScheme name="${esc(theme.name)}">` +
+    order.map((k) => `<a:${k}><a:srgbClr val="${theme.colors[k]}"/></a:${k}>`).join('') + '</a:clrScheme>';
+  for (const name of Object.keys(zip.files).filter((n) => /^ppt\/theme\/theme\d+\.xml$/.test(n))) {
+    let xml = await zip.file(name).async('string');
+    xml = xml.replace(/<a:clrScheme[\s\S]*?<\/a:clrScheme>/, scheme)
+             .replace(/(<a:theme [^>]*name=")[^"]*"/, `$1${esc(theme.name)}"`)
+             .replace(/(<a:fontScheme name=")[^"]*"/, `$1${esc(theme.name)}"`);
+    zip.file(name, xml);
+  }
+  // Re-pack without folder entries, which some cloud viewers reject.
+  const out = new JSZip();
+  for (const [n, f] of Object.entries(zip.files)) if (!f.dir) out.file(n, await f.async('uint8array'), { createFolders: false });
+  fs.writeFileSync(file, await out.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }));
+}
 
 const ROOT = process.argv[2];
 const OUT = path.join(ROOT, 'docs', 'Stratus-Presentation.pptx');
