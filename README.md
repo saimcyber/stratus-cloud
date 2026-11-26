@@ -10,9 +10,9 @@ Team: Saim Zaib (24I-2023), Abdullah Sajid (24I-2101), Muhammad Amish (24I-2099)
 
 | | |
 |---|---|
-| Live app | _add Vercel URL after deploy_ |
-| KMS API docs | _KMS URL_/docs |
-| Vault API docs | _Vault URL_/docs |
+| Live app | https://stratus-cloud-one.vercel.app |
+| KMS API docs | https://stratus-kms.onrender.com/docs |
+| Vault API docs | https://stratus-vault.onrender.com/docs |
 | Report | [`docs/Stratus-Technical-Report.pdf`](docs/Stratus-Technical-Report.pdf) |
 | Slides | [`docs/Stratus-Presentation.pptx`](docs/Stratus-Presentation.pptx) |
 
@@ -115,7 +115,11 @@ PASS
 
 ## Deploy
 
-See [`docs/DEPLOY.md`](docs/DEPLOY.md). In short: Neon Postgres (two databases, two roles) → Render (`render.yaml`, two web services) → Vercel (`web/`).
+See [`docs/DEPLOY.md`](docs/DEPLOY.md). In short: Neon Postgres (two databases, two roles, created by `scripts/setup_postgres.py`) → Render (`render.yaml`, two web services in Singapore) → Vercel (`web/`).
+
+The services run on free instances that sleep when idle. Run `python scripts/warmup.py --kms https://stratus-kms.onrender.com --vault https://stratus-vault.onrender.com` a couple of minutes before a demo.
+
+The same load test against the live deployment also passes (100/100 round trips, rotations mid-run, 25 cross-tenant attempts blocked, 0 succeeded), and all five Security Lab attacks are stopped on the live site.
 
 ## REST API summary
 

@@ -46,7 +46,7 @@
   .cover h1 { color: var(--paper); font-size: 50pt; line-height: .98; margin: 0 0 12pt; }
   .cover h1 em { color: var(--amber); }
   .cover .sub { font-size: 13pt; color: rgba(246,243,236,.75); max-width: 120mm; }
-  .cover .meta { font-size: 9.5pt; color: rgba(246,243,236,.75); display:grid; grid-template-columns: 1fr 1fr; gap: 8pt 20pt; position: relative; z-index: 1; }
+  .cover .meta { font-size: 9.5pt; color: rgba(246,243,236,.75); display:grid; grid-template-columns: repeat(3, max-content); gap: 8pt 30pt; white-space: nowrap; position: relative; z-index: 1; }
   .cover .meta b { color: var(--paper); display:block; font-weight: 600; margin-bottom: 1pt; }
   .strata { display:grid; gap:6pt; width: 95mm; margin-top: 18pt; }
   .strata div { border:1px solid rgba(246,243,236,.18); border-radius:7px; padding:6pt 10pt; font-size:9pt; display:flex; justify-content:space-between; }
@@ -82,6 +82,7 @@
   <div class="meta">
     <div><b>Team</b>Saim Zaib (24I-2023)<br/>Abdullah Sajid (24I-2101)<br/>Muhammad Amish (24I-2099)</div>
     <div><b>Instructor</b>Dr. Hina Binte Haq<br/>FAST NUCES, Islamabad<br/>November 2026</div>
+    <div><b>Live</b>stratus-cloud-one.vercel.app<br/><b>Code</b>github.com/saimcyber/stratus-cloud</div>
   </div>
 </div>
 
@@ -293,6 +294,13 @@ sequenceDiagram
  cross-tenant attempts   25 blocked, 0 succeeded
 PASS</pre>
   <p class="muted">Measured locally against PostgreSQL 16 (two databases, two roles, as in production). The same test also passes on SQLite, and all 24 automated tests pass on both backends.</p>
+  <p>The same load test against the live deployment (Render free instances in Singapore, Neon Postgres, client in Islamabad) also passes:</p>
+  <pre> legitimate round-trips  100/100 ok   in 21.30s (4.7/s)
+ latency (gen+decrypt)   p50 4296.0 ms   p95 5305.1 ms
+ rotations               versions [2, 3, 4]   key versions used [1, 2, 3, 4]
+ cross-tenant attempts   25 blocked, 0 succeeded
+PASS</pre>
+  <p class="muted">Correctness and isolation hold under concurrency in production. Throughput is lower because each free instance has a fraction of a CPU and every request crosses the internet; 24 concurrent workers queue behind one small instance.</p>
   <figure><img src="../img/activity.png" alt="Activity log" /><figcaption>Figure 2. Activity log: every KMS and Vault call for the tenant, including refused ones.</figcaption></figure>
 </section>
 
@@ -364,7 +372,7 @@ PASS</pre>
 <!-- ============================================================ ATTACKS -->
 <section>
   <h2><span class="n">09</span>Attack simulations</h2>
-  <p>The Security Lab runs each attack live against the running services (shown here on the local Postgres deployment), using the demo personas, and then explains the defence. Temporary objects and keys are cleaned up afterwards.</p>
+  <p>The Security Lab runs each attack live against the running services (shown here on the local Postgres deployment; all five also stop the attack on the live deployment), using the demo personas, and then explains the defence. Temporary objects and keys are cleaned up afterwards.</p>
   <figure><img src="../img/lab-1.png" alt="Lab 1" /><figcaption>Lab 1. A compromised storage administrator dumps every tenant's rows. Keyword search finds nothing; only ciphertext and wrapped keys are present.</figcaption></figure>
   <figure><img src="../img/lab-2.png" alt="Lab 2" /><figcaption>Lab 2. Mallory (Globex) is refused by the Vault, by the KMS with a stolen blob, and with a forged context; rapid retries trigger 429 throttling.</figcaption></figure>
 </section>
@@ -425,6 +433,14 @@ PASS</pre>
   </table>
   <h3>Deployment</h3>
   <p>Stratus KMS and Stratus Vault are deployed as two Render web services from <code>render.yaml</code>, each with its own Neon Postgres database and role. The console is deployed on Vercel. Secrets are set per service in the hosting dashboards and are never committed. CORS is limited to the console origin.</p>
+  <table>
+    <tr><th>Component</th><th>URL</th></tr>
+    <tr><td>Console (Vercel)</td><td><code>https://stratus-cloud-one.vercel.app</code></td></tr>
+    <tr><td>Stratus KMS (Render, Singapore)</td><td><code>https://stratus-kms.onrender.com/docs</code></td></tr>
+    <tr><td>Stratus Vault (Render, Singapore)</td><td><code>https://stratus-vault.onrender.com/docs</code></td></tr>
+    <tr><td>Source code</td><td><code>https://github.com/saimcyber/stratus-cloud</code></td></tr>
+  </table>
+  <p>The production databases were created by <code>scripts/setup_postgres.py</code>: two plain login roles (not members of Neon's admin role) with <code>CONNECT</code> revoked from <code>PUBLIC</code>. The script verifies that <code>vault_app</code> cannot connect to the <code>kms</code> database and vice versa before it writes any secrets. On the live system, sign-in, upload through the Envelope Inspector, all five Security Lab attacks and the load test were verified end to end.</p>
   <h3>Limitations and future work</h3>
   <ul>
     <li>The Root KEK is an environment secret; production systems keep it in an HSM, ideally with Root KEK rotation and multi-party control.</li>

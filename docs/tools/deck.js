@@ -346,7 +346,7 @@ async function icon(Comp, color, size = 256) {
   });
   s.addImage({ path: IMG('lab-2.png'), x: 6.25, y: 1.8, w: 6.45, h: 6.45 * 642 / 1920, altText: 'Lab 2 output: cross-tenant attempts denied and throttled', objectName: 'lab2', shadow: shadow() });
   s.addImage({ path: IMG('lab-3.png'), x: 6.25, y: 4.25, w: 6.45, h: 6.45 * 483 / 1920, altText: 'Lab 3 output: bit flip detected by AES-GCM', objectName: 'lab3', shadow: shadow() });
-  s.addNotes('Every card runs against the live services during the demo. Lab 2: Mallory from Globex is denied at the Vault, denied at the KMS, denied again with forged labels, then throttled.');
+  s.addNotes('Every card runs against the deployed services during the demo; all five were verified on the live site. Lab 2: Mallory from Globex is denied at the Vault, denied at the KMS, denied again with forged labels, then throttled.');
 
   // ================================================================= 12. Trade-offs
   s = pres.addSlide({ masterName: 'CONTENT', sectionTitle: 'Security evaluation' });
@@ -368,7 +368,7 @@ async function icon(Comp, color, size = 256) {
     { text: `RSA unwrap costs about ${RSA_X.toFixed(1)}× more. `, options: { bold: true } },
     { text: 'Re-wrapping is flat; re-encrypting grows with file size and also needs a full download and re-upload.' },
   ], { x: 0.6, y: 6.25, w: 12.1, h: 0.55, fontSize: 15, color: C.text1, objectName: 'tradeoff-caption' });
-  s.addNotes(`Measured live from the browser on the Trade-offs page, one local run on Postgres. Data-key round trip about ${Math.round(BENCH.dataKeyMs)} ms; AES-GCM at about ${Math.round(BENCH.gcm.at(-1).mbps)} MB/s in the browser; 16 bytes of ciphertext overhead.`);
+  s.addNotes(`Measured live from the browser on the Trade-offs page, one local run on Postgres. On the free hosting the round trip is slower, but the ratios hold. Data-key round trip about ${Math.round(BENCH.dataKeyMs)} ms; AES-GCM at about ${Math.round(BENCH.gcm.at(-1).mbps)} MB/s in the browser; 16 bytes of ciphertext overhead.`);
 
   // ================================================================= 13. Usability
   pres.addSection({ title: 'Product' });
@@ -416,8 +416,9 @@ async function icon(Comp, color, size = 256) {
   kicker(s, '14', 'Live demo', true);
   s.addText([{ text: 'Let us ' }, { text: 'show you', options: { italic: true, color: C.accent1 } }], { placeholder: 'title' });
   s.addText('Upload with the Inspector  ·  rotate and re-wrap  ·  Mallory attacks  ·  crypto-shred', { placeholder: 'body' });
+  txt(s, 'stratus-cloud-one.vercel.app  ·  github.com/saimcyber/stratus-cloud', { x: 0.7, y: 5.55, w: 11.9, h: 0.4, fontSize: 16, color: C.accent1, objectName: 'links' });
   txt(s, 'Questions welcome', { x: 0.7, y: 6.3, w: 6, h: 0.4, fontSize: 16, color: 'AEB6C2', objectName: 'questions' });
-  s.addNotes('Demo order: sign in as Alice, upload with the Inspector, open Raw view, rotate and re-wrap (hash unchanged), switch to Mallory and run Lab 2, finish with Lab 5. Warm up the free services two minutes before.');
+  s.addNotes('Live at stratus-cloud-one.vercel.app. Demo order: sign in as Alice, upload with the Inspector, open Raw view, rotate and re-wrap (hash unchanged), switch to Mallory and run Lab 2, finish with Lab 5. Warm up the free services two minutes before.');
 
   await pres.writeFile({ fileName: OUT });
   await applyTheme(OUT, THEME);

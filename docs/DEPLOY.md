@@ -16,30 +16,29 @@ git remote add origin https://github.com/<you>/stratus-cloud.git
 git push -u origin main
 ```
 
-## 2. Neon: two databases, two roles
+## 2. Neon: two databases, two roles, and the secrets
 
-1. Create a project in the Neon console. A free plan is enough.
-2. Under **Roles**, add `kms_app` and `vault_app`.
-3. Under **Databases**, add a `kms` database owned by `kms_app` and a `vault` database owned by `vault_app`.
-4. Copy each database's connection string. They look like `postgresql://kms_app:…@ep-xxx.neon.tech/kms?sslmode=require`.
+1. Create a project in the Neon console (free plan, region close to Render, e.g. AWS Singapore).
+2. Copy the owner connection string (`neondb_owner`, database `neondb`) from **Connect** into a file **outside** the repo, e.g. `../stratus-prod/admin-url.txt`.
+3. Run:
 
-Separate roles make the trust boundary hold even at the database layer: the Vault's credentials cannot read KMS tables.
+   ```bash
+   python scripts/setup_postgres.py --admin-url-file ../stratus-prod/admin-url.txt --out ../stratus-prod
+   ```
 
-## 3. Generate production secrets (once)
+   It creates `kms_app` and `vault_app` as plain login roles, the `kms` and `vault` databases owned by them, revokes `CONNECT` from `PUBLIC`, and checks that neither role can open the other database. It then writes `kms.env` and `vault.env` with the database URLs, a fresh `ROOT_KEK`, and the token signing key pair. Nothing secret is printed.
 
-```bash
-python scripts/gen_secrets.py --print
-```
+Roles created through Neon's dashboard belong to `neon_superuser`, which can read every database, so the script creates its own roles with SQL instead.
 
-Keep `ROOT_KEK` safe. **If it is lost or changed, every stored object becomes permanently undecryptable**, which is crypto-shredding by accident.
+Keep `kms.env` safe. **If `ROOT_KEK` is lost or changed, every stored object becomes permanently undecryptable**, which is crypto-shredding by accident.
 
 ## 4. Render
 
 1. **New → Blueprint**, then pick the repo. Render reads `render.yaml` and creates `stratus-kms` and `stratus-vault`.
-2. Fill in the `sync: false` variables.
+2. Fill in the `sync: false` variables from `kms.env` and `vault.env` (only the part after `=`).
    * For the KMS: `KMS_DATABASE_URL`, `ROOT_KEK` and `JWT_PRIVATE_KEY`.
    * For the Vault: `VAULT_DATABASE_URL` and `JWT_PUBLIC_KEY`.
-   * For both, set `ALLOWED_ORIGINS` to your Vercel URL (for example `https://stratus-cloud.vercel.app`). You can fill it in after step 5 and redeploy.
+   * For both, set `ALLOWED_ORIGINS` to your Vercel URL (ours is `https://stratus-cloud-one.vercel.app`). You can fill it in after step 5 and redeploy.
 3. Wait until both services show `/health` as healthy. The KMS seeds demo tenants, users and keys on first boot, and the Vault seeds the three demo buckets.
 
 ## 5. Vercel
@@ -57,6 +56,14 @@ python scripts/warmup.py --kms https://stratus-kms.onrender.com --vault https://
 python scripts/seed_objects.py --kms https://stratus-kms.onrender.com --vault https://stratus-vault.onrender.com
 python scripts/loadtest.py --kms https://stratus-kms.onrender.com --vault https://stratus-vault.onrender.com -n 60
 ```
+
+## Resetting the live demo data
+
+```bash
+python scripts/reset_demo.py --env-file ../stratus-prod/kms.env --env-file ../stratus-prod/vault.env --kms https://stratus-kms.onrender.com --vault https://stratus-vault.onrender.com
+```
+
+The script refuses to touch a server database unless the matching `ROOT_KEK` is supplied, so the seed keys are always sealed with the live root key.
 
 ## Before the live demo
 
